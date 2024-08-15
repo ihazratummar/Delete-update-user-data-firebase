@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete User Data</title>
+    <link rel="stylesheet" href="/static//styles//style.css"> <!-- Link to the CSS file -->
+</head>
+<body>
+    <div class="container">
+        <h1>Delete User Data</h1>
+
+        <!-- Form for requesting verification -->
+        <form action="/request_verification" method="POST">
+            <label for="email">Email:</label>
+            <input type="email" name="email" id="email" required>
+            <button type="submit">Request Verification Code</button>
+        </form>
+
+        <!-- Form for submitting verification code -->
+        <form action="/" method="POST">
+            <label for="verification_code">Verification Code:</label>
+            <input type="text" name="verification_code" id="verification_code" required>
+            <button type="submit">Verify Code</button>
+        </form>
+
+        <!-- Display message -->
+        {% if message %}
+            <p>{{ message }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
