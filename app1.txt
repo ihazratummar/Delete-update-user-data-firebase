@@ -1,0 +1,66 @@
+from flask import Flask, request, render_template, redirect, url_for
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
+from firebase_admin import auth
+from firebase_admin import storage
+
+app = Flask(__name__)
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate("islam-24-335fb-firebase-adminsdk-ukvhw-73f41ea577.json")
+firebase_admin.initialize_app(cred, {'storageBucket': 'islam-24-335fb.appspot.com'})
+
+# Get Firestore client
+db = firestore.client()
+
+# Get Storage client
+bucket = storage.bucket()
+
+# Reference to the 'user' collection
+users_ref = db.collection("user")
+
+def get_doc_ids_by_email(email):
+    """Fetches document IDs from Firestore by email."""
+    query = users_ref.where("email", "==", email)
+    docs = query.get()
+    doc_ids = [doc.id for doc in docs]
+    return doc_ids
+
+def delete_user_data(doc_id):
+    """Deletes Firestore document, Firebase Authentication user, and related storage files by document ID."""
+    try:
+        # Delete the Firestore document
+        users_ref.document(doc_id).delete()
+
+        # Delete the Firebase Authentication user
+        auth.delete_user(doc_id)
+
+        # Delete user files from Firebase Storage
+        user_folder = f"image/{doc_id}/"
+        blobs = bucket.list_blobs(prefix=user_folder)
+        for blob in blobs:
+            blob.delete()
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        email = request.form['email']
+        doc_ids = get_doc_ids_by_email(email)
+
+        if not doc_ids:
+            return render_template('index.html', message=f"No document found with the email: {email}")
+
+        for doc_id in doc_ids:
+            delete_user_data(doc_id)
+
+        return redirect(url_for('index', message=f"Deleted user data for email: {email}"))
+
+    message = request.args.get('message', '')
+    return render_template('index.html', message=message)
+
+if __name__ == '__main__':
+    app.run(debug=True)
